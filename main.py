@@ -47,9 +47,10 @@ def main():
         print("\nNo relevant jobs found. Check your internet connection.")
         sys.exit(1)
 
-    # --- Agent 2: Detect funding for the companies found ---
-    companies = list({job["company"] for job in jobs if job.get("company")})
-    funded_companies = detect_funding(companies)
+    # --- Agent 2: Detect funding ---
+    # Pass full job list so the detector can read descriptions for explicit
+    # funding mentions (common in HN posts) before falling back to web search
+    funded_companies = detect_funding(jobs)
 
     # --- Agent 3: Analyze skills across all postings ---
     skills_summary = analyze_skills(jobs)

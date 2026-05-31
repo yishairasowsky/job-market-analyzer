@@ -1,15 +1,19 @@
 """
 Agent 2 — Funding Detector
 
-For each company found by the Job Collector, this agent searches the web
-for recent funding news (2024-2026). It uses DuckDuckGo search to find
-relevant news snippets, then asks Claude to interpret whether the company
-recently raised money and how much.
+Two strategies for finding funded companies:
 
-Companies that recently received funding are high-priority targets because
-they have money and are in growth mode — meaning they are more likely to hire.
+Strategy A (fast, no API call needed): Scan the job description itself for funding
+mentions. HN posts in particular often say things like "we raised a $10M Series A"
+or "backed by Y Combinator" right in the text.
+
+Strategy B (web search): For companies without an explicit funding mention in their
+post, search DuckDuckGo for recent funding news and ask Claude to interpret results.
+
+HN-sourced jobs are checked first since they are the most likely to be funded.
 """
 
+import re
 import anthropic
 import os
 import sys
@@ -26,56 +30,100 @@ except ImportError:
     except ImportError:
         DDGS_AVAILABLE = False
 
+# Patterns that indicate a company has received funding
+FUNDING_PATTERNS = [
+    r'series [abcde]',
+    r'seed (round|funding|stage)',
+    r'raised \$[\d\.]+[mb]',
+    r'y combinator|yc [ws]\d+',
+    r'\$[\d\.]+[mb] (round|funding|raised)',
+    r'backed by (a16z|sequoia|benchmark|andreessen|greylock|accel|lightspeed)',
+    r'venture.backed',
+    r'we.re funded',
+]
 
-def detect_funding(companies):
-    if not DDGS_AVAILABLE:
-        print("Agent 2 (Funding Detector): Skipping — duckduckgo-search not installed.")
-        print("  Run: pip install duckduckgo-search")
-        return []
 
-    print(f"Agent 2 (Funding Detector): Checking {min(len(companies), MAX_COMPANIES_TO_CHECK)} companies for recent funding...")
+def detect_funding(jobs):
+    """Check which companies recently received funding.
 
-    client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+    Takes the full job list (not just company names) so we can read
+    the description for explicit funding mentions before searching the web.
+    """
+    print(f"Agent 2 (Funding Detector): Checking companies for recent funding...")
+
     funded = []
+    already_found = set()
 
-    for company in companies[:MAX_COMPANIES_TO_CHECK]:
-        if not company:
+    # Strategy A: scan job descriptions for explicit funding mentions (free, instant)
+    for job in jobs:
+        company = job.get("company", "")
+        if not company or company in already_found:
             continue
+        description = job.get("description", "")
+        funding_detail = _extract_funding_from_text(description)
+        if funding_detail:
+            funded.append({"company": company, "funding": funding_detail})
+            already_found.add(company)
+            print(f"  Funded (from post): {company} — {funding_detail}")
 
-        search_text = _search_funding_news(company)
-        if not search_text:
-            continue
+    # Strategy B: web search for remaining companies, prioritising HN ones
+    if not DDGS_AVAILABLE:
+        print("  Skipping web search — ddgs not installed. Run: pip install ddgs")
+    else:
+        # Prioritise HN companies (most likely funded), then others
+        hn_companies = [j["company"] for j in jobs if "hn_hiring" in j.get("source", "") and j["company"] not in already_found]
+        other_companies = [j["company"] for j in jobs if "hn_hiring" not in j.get("source", "") and j["company"] not in already_found]
+        companies_to_check = (hn_companies + other_companies)[:MAX_COMPANIES_TO_CHECK]
 
-        try:
-            response = client.messages.create(
-                model=MODEL,
-                max_tokens=150,
-                messages=[{
-                    "role": "user",
-                    "content": f"""Did the company "{company}" receive investment funding in 2024, 2025, or 2026?
+        client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
-Search results about this company:
+        for company in companies_to_check:
+            if not company:
+                continue
+            search_text = _search_funding_news(company)
+            if not search_text:
+                continue
+            try:
+                response = client.messages.create(
+                    model=MODEL,
+                    max_tokens=150,
+                    messages=[{
+                        "role": "user",
+                        "content": f"""Did the company "{company}" receive investment funding in 2024, 2025, or 2026?
+
+Search results:
 {search_text}
 
-Reply with ONLY one of these formats:
+Reply with ONLY one of:
 YES: [round and amount if known, e.g. "Series A, $12M, March 2025"]
 NO
 UNCLEAR"""
-                }]
-            )
-
-            answer = response.content[0].text.strip()
-            if answer.upper().startswith("YES"):
-                detail = answer[4:].strip() if len(answer) > 4 else "recently funded"
-                funded.append({"company": company, "funding": detail})
-                print(f"  Funded: {company} — {detail}")
-
-        except Exception as e:
-            print(f"  Could not check {company}: {e}")
-            continue
+                    }]
+                )
+                answer = response.content[0].text.strip()
+                if answer.upper().startswith("YES"):
+                    detail = answer[4:].strip() if len(answer) > 4 else "recently funded"
+                    funded.append({"company": company, "funding": detail})
+                    already_found.add(company)
+                    print(f"  Funded (web search): {company} — {detail}")
+            except Exception as e:
+                print(f"  Could not check {company}: {e}")
 
     print(f"  Found {len(funded)} recently funded companies.")
     return funded
+
+
+def _extract_funding_from_text(text):
+    """Return a funding description if the text mentions funding explicitly."""
+    text_lower = text.lower()
+    for pattern in FUNDING_PATTERNS:
+        match = re.search(pattern, text_lower)
+        if match:
+            # Return a short excerpt around the match for context
+            start = max(0, match.start() - 20)
+            end = min(len(text), match.end() + 60)
+            return text[start:end].strip().split("\n")[0][:120]
+    return None
 
 
 def _search_funding_news(company):
