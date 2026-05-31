@@ -1,11 +1,12 @@
 """
 Agent 1 — Job Collector
 
-Fetches job postings from two free APIs (no API keys required):
-  - Arbeitnow: strong coverage of European remote roles
-  - Remotive: strong coverage of US remote roles
+Fetches job postings from three free APIs (no API keys required):
+  - Arbeitnow:  European remote roles
+  - Remotive:   US remote roles
+  - RemoteOK:   US tech startups (many VC-backed companies)
 
-Filters both sources for data science and AI engineering roles.
+Filters all sources for data science and AI engineering roles.
 Returns a combined, deduplicated list of structured job dicts.
 """
 
@@ -18,6 +19,7 @@ from config import TARGET_ROLES, KEYWORDS, MAX_JOBS
 ARBEITNOW_URL = "https://www.arbeitnow.com/api/job-board-api"
 REMOTIVE_URL = "https://remotive.com/api/remote-jobs"
 REMOTIVE_CATEGORIES = ["data", "software-dev", "product"]
+REMOTEOK_URL = "https://remoteok.com/api"
 
 
 def collect_jobs():
@@ -26,6 +28,7 @@ def collect_jobs():
     all_raw = []
     all_raw += _fetch_arbeitnow()
     all_raw += _fetch_remotive()
+    all_raw += _fetch_remoteok()
 
     # Deduplicate by (title, company)
     seen = set()
@@ -39,7 +42,13 @@ def collect_jobs():
         if len(relevant) >= MAX_JOBS:
             break
 
-    print(f"  Found {len(relevant)} relevant job postings ({len([j for j in relevant if j.get('source') == 'remotive'])} US-remote, {len([j for j in relevant if j.get('source') == 'arbeitnow'])} European).")
+    by_source = {}
+    for job in relevant:
+        s = job.get("source", "unknown")
+        by_source[s] = by_source.get(s, 0) + 1
+
+    source_summary = ", ".join(f"{count} from {source}" for source, count in by_source.items())
+    print(f"  Found {len(relevant)} relevant job postings ({source_summary}).")
     return relevant
 
 
@@ -99,6 +108,41 @@ def _fetch_remotive():
                 "posted": job.get("publication_date"),
                 "source": "remotive",
             })
+    return results
+
+
+def _fetch_remoteok():
+    """RemoteOK lists many US tech startups, including VC-backed companies."""
+    try:
+        response = requests.get(
+            REMOTEOK_URL,
+            headers={"User-Agent": "job-market-analyzer/1.0"},
+            timeout=15
+        )
+        response.raise_for_status()
+        data = response.json()
+        # First element is metadata, skip it
+        jobs = [j for j in data if isinstance(j, dict) and j.get("position")]
+    except Exception as e:
+        print(f"  Warning: RemoteOK unavailable — {e}")
+        return []
+
+    results = []
+    for job in jobs:
+        tags = job.get("tags", []) or []
+        if not _is_relevant(job.get("position", ""), job.get("description", ""), tags):
+            continue
+        results.append({
+            "title": job.get("position"),
+            "company": job.get("company"),
+            "location": job.get("location", "Remote"),
+            "remote": True,
+            "url": job.get("url"),
+            "description": job.get("description", "")[:800],
+            "tags": tags if isinstance(tags, list) else [],
+            "posted": job.get("date"),
+            "source": "remoteok",
+        })
     return results
 
 
