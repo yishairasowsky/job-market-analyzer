@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Job Market Analyzer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      line-height: 1.6;
+    }
+
+    header {
+      background: #1a1d2e;
+      border-bottom: 1px solid #2d3148;
+      padding: 2rem 0;
+    }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    header h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.3px;
+    }
+
+    header p {
+      color: #94a3b8;
+      margin-top: 0.4rem;
+      font-size: 0.95rem;
+    }
+
+    .pipeline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1.2rem;
+    }
+
+    .agent {
+      background: #1e2236;
+      border: 1px solid #2d3148;
+      border-radius: 6px;
+      padding: 0.4rem 0.75rem;
+      font-size: 0.8rem;
+      color: #7c8db5;
+    }
+
+    .agent strong {
+      color: #a5b4fc;
+    }
+
+    main {
+      padding: 2.5rem 0 4rem;
+    }
+
+    .section {
+      margin-bottom: 3rem;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid #1e2236;
+      padding-bottom: 0.6rem;
+    }
+
+    .section-header h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #a5b4fc;
+    }
+
+    .section-header .date {
+      font-size: 0.8rem;
+      color: #4a5568;
+    }
+
+    .output {
+      background: #13151f;
+      border: 1px solid #1e2236;
+      border-radius: 8px;
+      padding: 1.5rem;
+      font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+      font-size: 0.82rem;
+      color: #cbd5e1;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.7;
+    }
+
+    .empty {
+      color: #4a5568;
+      font-style: italic;
+      font-size: 0.9rem;
+      padding: 1rem 0;
+    }
+
+    footer {
+      text-align: center;
+      color: #2d3148;
+      font-size: 0.8rem;
+      padding: 2rem 0;
+      border-top: 1px solid #1a1d2e;
+    }
+
+    footer a {
+      color: #4a5568;
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      color: #7c8db5;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <h1>Job Market Analyzer</h1>
+    <p>A 5-agent AI pipeline that finds remote AI/data jobs, detects recently funded companies, and writes personalized outreach — automatically.</p>
+    <div class="pipeline">
+      <div class="agent"><strong>1</strong> Job Collector</div>
+      <div class="agent"><strong>2</strong> Funding Detector</div>
+      <div class="agent"><strong>3</strong> Skills Analyzer</div>
+      <div class="agent"><strong>4</strong> Report Writer</div>
+      <div class="agent"><strong>5</strong> Outreach Writer</div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+
+    <div class="section">
+      <div class="section-header">
+        <h2>Weekly Report</h2>
+        {% if report_date %}<span class="date">{{ report_date }}</span>{% endif %}
+      </div>
+      {% if report %}
+        <div class="output">{{ report }}</div>
+      {% else %}
+        <p class="empty">No report generated yet. Run <code>python main.py</code> to generate one.</p>
+      {% endif %}
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <h2>Outreach Messages</h2>
+        {% if outreach_date %}<span class="date">{{ outreach_date }}</span>{% endif %}
+      </div>
+      {% if outreach %}
+        <div class="output">{{ outreach }}</div>
+      {% else %}
+        <p class="empty">No outreach messages generated yet.</p>
+      {% endif %}
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  <div class="container">
+    Built with Python + Claude API &nbsp;·&nbsp;
+    <a href="https://github.com/yishairasowsky/job-market-analyzer" target="_blank">View source on GitHub</a>
+  </div>
+</footer>
+
+</body>
+</html>

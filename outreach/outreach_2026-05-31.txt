@@ -1,0 +1,72 @@
+OUTREACH MESSAGES — May 31, 2026
+============================================================
+
+COMPANY: OTC Group
+ROLE:    Praktikant:in Social Media - Sportvermarktung
+URL:     https://www.arbeitnow.com/jobs/companies/otc-group/praktikantin-social-media-sportvermarktung-berlin-270222
+
+Looking at this carefully: OTC Group is hiring a **social media intern for basketball sports marketing** — a German-language internship role focused on community building and content creation. This is not a data science or AI role, and the sender has no stated background in sports marketing, social media management, or German-language content. This is also an internship, and the sender appears to be a working professional.
+
+This is not a relevant match. Writing a personalized outreach message pretending there is a fit would be doing the sender a disservice — it would come across as tone-deaf to the hiring manager and could damage the sender's credibility.
+
+**My recommendation:** Skip this one. The role is a German-language social media internship at a basketball marketing agency. There is no honest connection to make between the sender's background in data science, Python, and LLM pipelines and this position. No amount of creative framing changes that.
+
+If OTC Group has other roles — for example, in data, analytics, or AI tooling — those would be worth pursuing with a tailored message. But outreach for this specific role would not serve the sender well.
+
+If you'd like, I can write the messages for a different company and role that actually aligns with the sender's background, or help you identify what kind of roles at sports agencies might be a genuine fit.
+
+============================================================
+COMPANY: Lionflence
+ROLE:    Artist Manager / Influencer Manager (m/w/d)
+URL:     https://www.arbeitnow.com/jobs/companies/lionflence/artist-manager-influencer-manager-mulheim-232878
+
+MESSAGE 1 — LinkedIn Connection Request:
+
+Hi, I saw Lionflence is hiring for artist/influencer management. I'm a data scientist and AI developer — I build the kind of software systems that make influencer operations scalable. Would love to connect and learn more about what you're building.
+
+---
+
+MESSAGE 2 — Cold Email:
+
+Subject: AI/Data Skills for Lionflence's Influencer Tech Stack
+
+Hi,
+
+I noticed Lionflence has built its own proprietary software systems to support artist and influencer management — that caught my attention, because that's exactly the kind of problem I like working on. I'm a data scientist and AI developer with hands-on experience building LLM pipelines, multi-agent tools, and data workflows in Python, and I've recently built a multi-agent job market analyzer and a Gmail smart-compose extension using the Claude API. While the open role is focused on management, I'd be genuinely useful on the technical side of your platform — whether that's improving how you track creator performance, automating reporting, or building AI-assisted workflows into your tools. I'm based in Israel, work fully remote, and am available during European hours. Would you be open to a 20-minute call this week or next to explore whether there's a fit?
+
+Best,
+[Your Name]
+
+============================================================
+COMPANY: eviit GmbH
+ROLE:    Senior Data Engineer (m/w/d) - Cloud, Products & Innovation
+URL:     https://www.arbeitnow.com/jobs/companies/eviit-gmbh/senior-data-engineer-cloud-products-innovation-kayhude-220698
+
+MESSAGE 1 — LinkedIn Connection Request:
+
+Hi — I saw eviit is looking for a Senior Data Engineer who's comfortable with both traditional data engineering and LLMs. I'm a US-based data scientist living in Israel, available for fully remote work. Would love to connect and learn more about the role.
+
+---
+
+MESSAGE 2 — Cold Email:
+
+Subject: Senior Data Engineer role — US data scientist, remote from Israel
+
+I came across eviit's job posting and appreciated the honest framing: you want someone who can do the foundational data engineering work but also genuinely cares about LLMs and modern development approaches like vibe coding — not someone just checking boxes. That matches how I actually work. I'm an American data scientist based near Jerusalem, currently building LLM-powered tools using Python and the Claude API, including a multi-agent job market analyzer and a Gmail smart-compose extension, while also doing data science work for a startup. I'm comfortable with the full stack from SQL and data pipelines to agent orchestration, and I'm actively deepening my knowledge of semantic layer architecture. I'm available for fully remote work on US or European hours and have no scheduling conflicts with your team. Would you have 20 minutes this week or next to talk about whether this could be a fit?
+
+============================================================
+COMPANY: SumUp
+ROLE:    Senior Software Engineer, Android - KMP
+URL:     https://www.arbeitnow.com/jobs/companies/sumup/senior-software-engineer-android-kmp-berlin-67544
+
+MESSAGE 1 — LinkedIn Connection Request:
+
+Hi, I came across SumUp's work building POS solutions for small merchants and found it genuinely interesting. I'm a data scientist and AI developer with Python, LLM pipelines, and agent tooling experience. Would love to connect and learn more about your engineering team.
+
+---
+
+MESSAGE 2 — Cold Email:
+
+Subject: Data Scientist / AI Developer Interested in SumUp
+
+SumUp's POS platform — helping cafes, salons, and small shops manage inventory, analytics, and compliance in one place — is exactly the kind of product-focused work I find most interesting. I'm an American data scientist and AI developer currently based near Jerusalem, looking for fully remote roles with companies doing serious technical work. My recent background includes a data science role at a startup, building LLM-powered tools using Python and the Claude API, and constructing multi-agent pipelines for real-world analysis tasks. I noticed you're hiring for a Senior Android/KMP engineer, which isn't my lane, but I wanted to reach out directly in case there's a fit on the data or AI side — or in case roles like that are coming. Would you have 20 minutes sometime in the next few weeks to connect?

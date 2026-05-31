@@ -1,0 +1,45 @@
+JOB MARKET REPORT — May 31, 2026
+==================================================
+
+WEEKLY JOB MARKET REPORT — May 31, 2026
+
+
+HIGHLIGHTS
+
+This was a near-total mismatch week. The job postings pulled were dominated by German influencer management roles and a social media internship, with only one partially relevant listing in data engineering. No recently funded companies were identified this week, which means there are no warm hiring targets to prioritize. This batch reflects a data collection gap more than a real market signal, so treat it accordingly and do not adjust your job search strategy based on it.
+
+
+PRIORITY COMPANIES TO APPLY TO
+
+No funded companies were identified this week.
+
+The only posting with any technical overlap is listed below, but it is a partial match at best and may require in-person presence in Germany:
+
+Senior Data Engineer, Cloud Products and Innovation at eviit GmbH (Kayhude, Germany) — touches on cloud platforms and LLMs, but is a data engineering role rather than data science or AI development, and the location situation is unclear. Approach with caution before investing time in an application.
+https://www.arbeitnow.com/jobs/companies/eviit-gmbh/senior-data-engineer-cloud-products-innovation-kayhude-220698
+
+All other postings (Lionflence, OTC Group, SumUp Android) are not relevant to your background and are not worth pursuing.
+
+
+IN-DEMAND SKILLS THIS WEEK
+
+Skills appearing in this week's postings:
+
+Cloud platforms — you have adjacent experience, not a direct match
+Data architecture and data engineering — partial overlap with your data science work
+LLMs — you have this
+Android and Kotlin Multiplatform — you do not have this, and it is not a priority gap to fill
+Social media tools and influencer platforms — not relevant to your profile
+Business analytics — you have this
+Point-of-sale and app integration — not relevant
+
+The only skill in this batch you fully own and that appeared in a posting is LLMs. Everything else either does not apply to you or is a weak overlap.
+
+
+RECOMMENDED ACTIONS
+
+First, do not rely on this feed as your primary source this week. Directly search the Anthropic jobs page, the AI Grant portfolio companies, and Y Combinator's Work at a Startup board for remote data science and AI engineer roles posted in the last seven days.
+
+Second, use the time you would have spent on applications to push your multi-agent job market analyzer project further. A working demo strengthens your profile more than applying to mismatched roles.
+
+Third, send one cold outreach message this week to a US-based AI startup whose product genuinely interests you. Reference a specific technical detail from their public work. One targeted message beats ten unfocused applications.
