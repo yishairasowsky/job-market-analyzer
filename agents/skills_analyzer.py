@@ -13,7 +13,7 @@ import anthropic
 import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from config import MODEL
+from config import MODEL, MY_SKILLS
 
 
 def analyze_skills(jobs):
@@ -43,11 +43,14 @@ def analyze_skills(jobs):
         max_tokens=500,
         messages=[{
             "role": "user",
-            "content": f"""Analyze these job postings and extract the following:
+            "content": f"""Analyze these job postings for a candidate with these skills: {", ".join(MY_SKILLS)}.
 
-1. TOP 10 TECHNICAL SKILLS — the specific tools, languages, and frameworks mentioned most (e.g. Python, LangChain, dbt, Spark, etc.)
-2. TOP 5 ROLE FOCUSES — the types of work most commonly described (e.g. "LLM fine-tuning", "building data pipelines", "RAG systems", etc.)
-3. ONE TREND — any notable pattern you see across these postings
+Extract the following:
+
+1. TOP 10 TECHNICAL SKILLS — specific tools, languages, and frameworks mentioned most often
+2. TOP 5 ROLE FOCUSES — types of work most commonly described
+3. SKILLS GAP — which of the top 10 skills does the candidate NOT already have?
+4. ONE TREND — any notable pattern across these postings
 
 Job postings:
 {job_text}

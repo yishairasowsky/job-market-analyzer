@@ -2,8 +2,7 @@
 Agent 4 — Report Writer
 
 Takes the outputs from all three previous agents and produces a clean,
-readable weekly report. This is the final synthesis step — turning data
-into a decision-making tool you can actually act on.
+readable weekly report personalized to the user's background and skills.
 """
 
 import anthropic
@@ -11,7 +10,7 @@ import os
 import sys
 from datetime import date
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from config import MODEL
+from config import MODEL, MY_BACKGROUND, MY_SKILLS
 
 
 def write_report(jobs, funded_companies, skills_summary):
@@ -19,59 +18,71 @@ def write_report(jobs, funded_companies, skills_summary):
 
     client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
-    # Format the funded companies section
-    if funded_companies:
-        funded_text = "\n".join([
-            f"- {f['company']}: {f['funding']}" for f in funded_companies
-        ])
-    else:
-        funded_text = "None identified this week."
+    today = date.today().strftime("%B %d, %Y")
 
-    # List the top job postings
+    funded_text = "\n".join([
+        f"- {f['company']}: {f['funding']}" for f in funded_companies
+    ]) if funded_companies else "None identified this week."
+
     top_jobs_text = "\n".join([
-        f"- {job['title']} at {job['company']} | {job['url']}"
-        for job in jobs[:12]
+        f"- {job['title']} at {job['company']} ({job['location']}) | {job['url']}"
+        for job in jobs[:15]
     ])
+
+    my_skills_text = ", ".join(MY_SKILLS)
 
     response = client.messages.create(
         model=MODEL,
-        max_tokens=700,
+        max_tokens=900,
         messages=[{
             "role": "user",
-            "content": f"""Write a concise weekly job market report. The reader is a data scientist and AI developer in Israel who prefers remote work and is actively job hunting.
+            "content": f"""Today's date is {today}. Write a weekly job market report for the following person:
 
-INPUT DATA:
+ABOUT THE READER:
+{MY_BACKGROUND}
 
-Recently funded companies (these are priority targets — they have money and are hiring):
+THEIR SKILLS: {my_skills_text}
+
+---
+
+THIS WEEK'S DATA:
+
+Recently funded companies (priority targets — they have money and are actively hiring):
 {funded_text}
 
-Top job postings found this week:
+Job postings found this week:
 {top_jobs_text}
 
-Skills analysis:
+Market skills analysis:
 {skills_summary}
 
-Write the report with exactly these sections:
+---
+
+Write the report with exactly these four sections. Use plain text, no markdown.
+Today's date is {today} — use this exact date, do not invent a different date.
 
 HIGHLIGHTS
-[2-3 sentences summarizing what stands out this week]
+2-3 sentences on what stands out this week specifically for this reader.
 
 PRIORITY COMPANIES TO APPLY TO
-[List funded companies that have open roles, or top companies if none funded]
+If there are funded companies with relevant roles, list them first.
+Then list the top 2-3 open roles that best match the reader's skills.
+Include the URL for each role.
 
 IN-DEMAND SKILLS THIS WEEK
-[The top skills from the analysis, formatted as a quick-read list]
+Quick list of the top skills appearing in postings.
+Flag which ones the reader already has vs. which are gaps.
 
 RECOMMENDED ACTIONS
-[3 specific things the reader should do this week based on this data]
+3 specific, actionable things to do THIS week.
+Be direct and concrete — not generic advice.
 
-Keep the total under 350 words. Friendly but professional tone."""
+Keep total under 400 words."""
         }]
     )
 
     header = (
-        f"JOB MARKET REPORT\n"
-        f"Week of {date.today().strftime('%B %d, %Y')}\n"
+        f"JOB MARKET REPORT — {today}\n"
         f"{'=' * 50}\n\n"
     )
 
