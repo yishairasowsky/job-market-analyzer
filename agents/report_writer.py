@@ -13,8 +13,16 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from config import MODEL, MY_BACKGROUND, MY_SKILLS
 
 
-def write_report(jobs, funded_companies, skills_summary):
-    print("Agent 4 (Report Writer): Writing your weekly report...")
+def write_report(jobs, funded_companies, skills_summary, user_background=None, user_skills=None, on_progress=None):
+    def progress(msg):
+        print(msg)
+        if on_progress:
+            on_progress(msg)
+
+    progress("Agent 4 (Report Writer): Writing your weekly report...")
+
+    background = user_background if user_background else MY_BACKGROUND
+    skills = user_skills if user_skills is not None else MY_SKILLS
 
     client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
@@ -29,7 +37,7 @@ def write_report(jobs, funded_companies, skills_summary):
         for job in jobs[:15]
     ])
 
-    my_skills_text = ", ".join(MY_SKILLS)
+    my_skills_text = ", ".join(skills)
 
     response = client.messages.create(
         model=MODEL,
@@ -39,7 +47,7 @@ def write_report(jobs, funded_companies, skills_summary):
             "content": f"""Today's date is {today}. Write a weekly job market report for the following person:
 
 ABOUT THE READER:
-{MY_BACKGROUND}
+{background}
 
 THEIR SKILLS: {my_skills_text}
 
@@ -86,5 +94,5 @@ Keep total under 400 words."""
         f"{'=' * 50}\n\n"
     )
 
-    print("  Report complete.")
+    progress("  Report complete.")
     return header + response.content[0].text

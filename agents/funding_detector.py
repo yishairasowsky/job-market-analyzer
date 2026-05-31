@@ -30,7 +30,6 @@ except ImportError:
     except ImportError:
         DDGS_AVAILABLE = False
 
-# Patterns that indicate a company has received funding
 FUNDING_PATTERNS = [
     r'series [abcde]',
     r'seed (round|funding|stage)',
@@ -43,18 +42,18 @@ FUNDING_PATTERNS = [
 ]
 
 
-def detect_funding(jobs):
-    """Check which companies recently received funding.
+def detect_funding(jobs, on_progress=None):
+    def progress(msg):
+        print(msg)
+        if on_progress:
+            on_progress(msg)
 
-    Takes the full job list (not just company names) so we can read
-    the description for explicit funding mentions before searching the web.
-    """
-    print(f"Agent 2 (Funding Detector): Checking companies for recent funding...")
+    progress(f"Agent 2 (Funding Detector): Checking companies for recent funding...")
 
     funded = []
     already_found = set()
 
-    # Strategy A: scan job descriptions for explicit funding mentions (free, instant)
+    # Strategy A: scan job descriptions for explicit funding mentions
     for job in jobs:
         company = job.get("company", "")
         if not company or company in already_found:
@@ -64,13 +63,12 @@ def detect_funding(jobs):
         if funding_detail:
             funded.append({"company": company, "funding": funding_detail})
             already_found.add(company)
-            print(f"  Funded (from post): {company} — {funding_detail}")
+            progress(f"  Funded (from post): {company} — {funding_detail}")
 
-    # Strategy B: web search for remaining companies, prioritising HN ones
+    # Strategy B: web search for remaining companies
     if not DDGS_AVAILABLE:
-        print("  Skipping web search — ddgs not installed. Run: pip install ddgs")
+        progress("  Skipping web search — ddgs not installed. Run: pip install ddgs")
     else:
-        # Prioritise HN companies (most likely funded), then others
         hn_companies = [j["company"] for j in jobs if "hn_hiring" in j.get("source", "") and j["company"] not in already_found]
         other_companies = [j["company"] for j in jobs if "hn_hiring" not in j.get("source", "") and j["company"] not in already_found]
         companies_to_check = (hn_companies + other_companies)[:MAX_COMPANIES_TO_CHECK]
@@ -80,6 +78,7 @@ def detect_funding(jobs):
         for company in companies_to_check:
             if not company:
                 continue
+            progress(f"  Checking {company}...")
             search_text = _search_funding_news(company)
             if not search_text:
                 continue
@@ -105,21 +104,19 @@ UNCLEAR"""
                     detail = answer[4:].strip() if len(answer) > 4 else "recently funded"
                     funded.append({"company": company, "funding": detail})
                     already_found.add(company)
-                    print(f"  Funded (web search): {company} — {detail}")
+                    progress(f"  Funded (web search): {company} — {detail}")
             except Exception as e:
-                print(f"  Could not check {company}: {e}")
+                progress(f"  Could not check {company}: {e}")
 
-    print(f"  Found {len(funded)} recently funded companies.")
+    progress(f"  Found {len(funded)} recently funded companies.")
     return funded
 
 
 def _extract_funding_from_text(text):
-    """Return a funding description if the text mentions funding explicitly."""
     text_lower = text.lower()
     for pattern in FUNDING_PATTERNS:
         match = re.search(pattern, text_lower)
         if match:
-            # Return a short excerpt around the match for context
             start = max(0, match.start() - 20)
             end = min(len(text), match.end() + 60)
             return text[start:end].strip().split("\n")[0][:120]
@@ -127,7 +124,6 @@ def _extract_funding_from_text(text):
 
 
 def _search_funding_news(company):
-    """Search DuckDuckGo for funding news about a company."""
     try:
         with DDGS() as ddgs:
             results = list(ddgs.text(

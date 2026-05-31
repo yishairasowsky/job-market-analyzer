@@ -4,8 +4,6 @@ Agent 5 — Outreach Writer
 For each priority company (funded startups first, then top job matches),
 researches what the company does and generates a personalized cold email or
 LinkedIn message ready to send.
-
-Output is a plain-text file saved to outreach/outreach_YYYY-MM-DD.txt.
 """
 
 import anthropic
@@ -25,23 +23,24 @@ except ImportError:
     except ImportError:
         DDGS_AVAILABLE = False
 
-# Max companies to write outreach for — each one is one Claude call
 MAX_OUTREACH_TARGETS = 5
 
 
-def write_outreach(jobs, funded_companies):
-    """Generate personalized outreach messages for top target companies.
+def write_outreach(jobs, funded_companies, user_background=None, user_skills=None, on_progress=None):
+    def progress(msg):
+        print(msg)
+        if on_progress:
+            on_progress(msg)
 
-    Prioritizes funded companies, then fills remaining slots from the top job
-    matches. Returns a formatted string ready to save as a text file.
-    """
-    print(f"Agent 5 (Outreach Writer): Writing personalized outreach messages...")
+    progress(f"Agent 5 (Outreach Writer): Writing personalized outreach messages...")
+
+    background = user_background if user_background else MY_BACKGROUND
+    skills = user_skills if user_skills is not None else MY_SKILLS
 
     client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-    my_skills_text = ", ".join(MY_SKILLS)
+    my_skills_text = ", ".join(skills)
     today = date.today().strftime("%B %d, %Y")
 
-    # Build the ordered target list: funded companies first, then top jobs
     targets = []
     seen_companies = set()
 
@@ -49,7 +48,6 @@ def write_outreach(jobs, funded_companies):
         company_name = fc["company"]
         if company_name in seen_companies:
             continue
-        # Find the matching job record so we have role + URL
         job = _find_job(jobs, company_name)
         targets.append({
             "company": company_name,
@@ -60,7 +58,6 @@ def write_outreach(jobs, funded_companies):
         })
         seen_companies.add(company_name)
 
-    # Fill remaining slots from top jobs (not already in targets)
     for job in jobs:
         if len(targets) >= MAX_OUTREACH_TARGETS:
             break
@@ -77,25 +74,23 @@ def write_outreach(jobs, funded_companies):
         seen_companies.add(company)
 
     if not targets:
-        print("  No targets found.")
+        progress("  No targets found.")
         return ""
 
     messages = []
 
     for i, target in enumerate(targets, 1):
         company = target["company"]
-        print(f"  [{i}/{len(targets)}] Writing outreach for {company}...")
+        progress(f"  [{i}/{len(targets)}] Writing outreach for {company}...")
 
-        # Research what the company actually does
         company_context = _research_company(company, target["description"])
 
-        # Ask Claude to write the message
         funding_note = f"They recently received funding ({target['funding']})." if target["funding"] else ""
 
         prompt = f"""Today is {today}. You are writing a short, personalized cold outreach message on behalf of a job seeker.
 
 ABOUT THE SENDER:
-{MY_BACKGROUND}
+{background}
 
 SENDER'S SKILLS: {my_skills_text}
 
@@ -126,14 +121,13 @@ Write both messages in first person as if you are the sender. Be direct and conf
             )
             message_text = response.content[0].text.strip()
         except Exception as e:
-            print(f"    Error generating message for {company}: {e}")
+            progress(f"    Error generating message for {company}: {e}")
             message_text = "[Error generating message]"
 
-        # Format the block for this company
         block = _format_block(target, message_text)
         messages.append(block)
 
-    print(f"  Done. Wrote {len(messages)} outreach messages.")
+    progress(f"  Done. Wrote {len(messages)} outreach messages.")
 
     separator = "\n" + "=" * 60 + "\n"
     header = f"OUTREACH MESSAGES — {today}\n{'=' * 60}\n\n"
@@ -141,7 +135,6 @@ Write both messages in first person as if you are the sender. Be direct and conf
 
 
 def _find_job(jobs, company_name):
-    """Return the first job record matching this company name."""
     for job in jobs:
         if job.get("company", "").lower() == company_name.lower():
             return job
@@ -149,10 +142,8 @@ def _find_job(jobs, company_name):
 
 
 def _research_company(company_name, job_description):
-    """Get a brief summary of what the company does using DuckDuckGo."""
     if not DDGS_AVAILABLE:
         return job_description[:300] if job_description else ""
-
     try:
         with DDGS() as ddgs:
             results = list(ddgs.text(
@@ -161,7 +152,6 @@ def _research_company(company_name, job_description):
             ))
         snippets = [r.get("body", "") for r in results if r.get("body")]
         web_context = " ".join(snippets)[:400]
-        # Combine web results with the job description for richer context
         combined = web_context
         if job_description:
             combined += "\n\nFrom their job posting: " + job_description[:300]
@@ -171,7 +161,6 @@ def _research_company(company_name, job_description):
 
 
 def _format_block(target, message_text):
-    """Format one company's outreach block."""
     lines = []
     lines.append(f"COMPANY: {target['company']}")
     lines.append(f"ROLE:    {target['role']}")

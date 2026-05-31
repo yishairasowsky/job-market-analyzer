@@ -4,9 +4,6 @@ Agent 3 — Skills Analyzer
 Reads all the job postings collected by the Job Collector and asks Claude
 to extract patterns: which technical skills appear most, what kind of roles
 are in demand, and what trends are visible this week.
-
-This is the "intelligence" layer — turning raw job text into actionable
-information about what the market actually wants right now.
 """
 
 import anthropic
@@ -16,15 +13,21 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from config import MODEL, MY_SKILLS
 
 
-def analyze_skills(jobs):
+def analyze_skills(jobs, user_skills=None, on_progress=None):
+    def progress(msg):
+        print(msg)
+        if on_progress:
+            on_progress(msg)
+
     if not jobs:
         return "No jobs available to analyze."
 
-    print(f"Agent 3 (Skills Analyzer): Analyzing skills across {len(jobs)} postings...")
+    skills = user_skills if user_skills is not None else MY_SKILLS
+
+    progress(f"Agent 3 (Skills Analyzer): Analyzing skills across {len(jobs)} postings...")
 
     client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
-    # Build a readable summary of the jobs (limit tokens by capping descriptions)
     job_blocks = []
     for job in jobs[:25]:
         tags = ", ".join(job.get("tags", [])) or "none listed"
@@ -43,7 +46,7 @@ def analyze_skills(jobs):
         max_tokens=500,
         messages=[{
             "role": "user",
-            "content": f"""Analyze these job postings for a candidate with these skills: {", ".join(MY_SKILLS)}.
+            "content": f"""Analyze these job postings for a candidate with these skills: {", ".join(skills)}.
 
 Extract the following:
 
@@ -60,5 +63,5 @@ Be specific and concise. Plain text only."""
     )
 
     result = response.content[0].text
-    print("  Skills analysis complete.")
+    progress("  Skills analysis complete.")
     return result
