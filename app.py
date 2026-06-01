@@ -6,13 +6,16 @@ work in real time. Results stream back live via Server-Sent Events.
 """
 
 import os
+import io
 import json
+import base64
 import queue
 import threading
 from pathlib import Path
 from datetime import date
-from flask import Flask, render_template, request, Response, stream_with_context
+from flask import Flask, render_template, request, Response, stream_with_context, jsonify
 from dotenv import load_dotenv
+import anthropic
 
 load_dotenv()
 
@@ -45,6 +48,107 @@ def index():
         outreach=outreach,
         outreach_date=outreach_date,
     )
+
+
+@app.route("/parse-resume", methods=["POST"])
+def parse_resume():
+    if "resume" not in request.files:
+        return jsonify({"error": "No file uploaded."}), 400
+
+    f = request.files["resume"]
+    filename = f.filename.lower()
+    file_bytes = f.read()
+
+    if not file_bytes:
+        return jsonify({"error": "Uploaded file is empty."}), 400
+
+    client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+
+    try:
+        if filename.endswith(".pdf"):
+            # Claude natively reads PDFs — send as base64 document
+            pdf_b64 = base64.standard_b64encode(file_bytes).decode("utf-8")
+            response = client.messages.create(
+                model="claude-sonnet-4-6",
+                max_tokens=600,
+                messages=[{
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "document",
+                            "source": {
+                                "type": "base64",
+                                "media_type": "application/pdf",
+                                "data": pdf_b64,
+                            },
+                        },
+                        {
+                            "type": "text",
+                            "text": _resume_prompt(),
+                        }
+                    ],
+                }]
+            )
+
+        elif filename.endswith(".docx"):
+            from docx import Document
+            doc = Document(io.BytesIO(file_bytes))
+            text = "\n".join(p.text for p in doc.paragraphs if p.text.strip())
+            response = client.messages.create(
+                model="claude-sonnet-4-6",
+                max_tokens=600,
+                messages=[{
+                    "role": "user",
+                    "content": f"{_resume_prompt()}\n\nRESUME TEXT:\n{text[:6000]}"
+                }]
+            )
+
+        elif filename.endswith(".txt"):
+            text = file_bytes.decode("utf-8", errors="replace")
+            response = client.messages.create(
+                model="claude-sonnet-4-6",
+                max_tokens=600,
+                messages=[{
+                    "role": "user",
+                    "content": f"{_resume_prompt()}\n\nRESUME TEXT:\n{text[:6000]}"
+                }]
+            )
+
+        else:
+            return jsonify({"error": "Unsupported file type. Upload a PDF, DOCX, or TXT file."}), 400
+
+        raw = response.content[0].text.strip()
+
+        # Parse the two sections Claude returns
+        background, skills = _parse_resume_response(raw)
+        return jsonify({"background": background, "skills": skills})
+
+    except Exception as e:
+        return jsonify({"error": f"Could not read resume: {str(e)}"}), 500
+
+
+def _resume_prompt():
+    return """Read this resume and extract two things for a job search tool.
+
+Reply in exactly this format (no extra text):
+
+BACKGROUND:
+[2-3 sentences: who this person is, what they've built or done, what kind of role they're seeking. Write in first person as if they are describing themselves.]
+
+SKILLS:
+[comma-separated list of their technical skills, tools, languages, and frameworks. Keep it concise — 8-15 items max.]"""
+
+
+def _parse_resume_response(text):
+    background, skills = "", ""
+    if "BACKGROUND:" in text and "SKILLS:" in text:
+        bg_start = text.index("BACKGROUND:") + len("BACKGROUND:")
+        sk_start = text.index("SKILLS:")
+        background = text[bg_start:sk_start].strip()
+        skills = text[sk_start + len("SKILLS:"):].strip()
+    else:
+        background = text[:400]
+    return background, skills
 
 
 @app.route("/run", methods=["POST"])

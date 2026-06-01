@@ -283,6 +283,41 @@
       letter-spacing: 0.08em; color: var(--muted); margin-bottom: 1rem;
     }
 
+    /* ── Resume drop zone ── */
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: 10px;
+      padding: 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--accent);
+      background: rgba(99,102,241,0.05);
+    }
+
+    .drop-zone input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+
+    .drop-zone .drop-icon { font-size: 1.6rem; margin-bottom: 0.4rem; }
+    .drop-zone .drop-label { font-size: 0.85rem; color: var(--muted); }
+    .drop-zone .drop-label strong { color: var(--accent); }
+    .drop-zone .drop-hint { font-size: 0.75rem; color: var(--border); margin-top: 0.3rem; }
+
+    .drop-zone.has-file { border-color: var(--green); background: rgba(34,197,94,0.05); }
+    .drop-zone.has-file .drop-label { color: var(--green); }
+
+    .parse-status {
+      font-size: 0.82rem; margin-top: 0.5rem; min-height: 1.2em;
+      color: var(--muted);
+    }
+    .parse-status.ok { color: var(--green); }
+    .parse-status.err { color: var(--red); }
+
     .error-msg {
       background: rgba(239,68,68,0.1);
       border: 1px solid rgba(239,68,68,0.3);
@@ -322,20 +357,34 @@
   <div class="container">
     <form id="analyzeForm">
       <div class="form-grid">
+
+        <div>
+          <label>Upload Resume (optional)</label>
+          <div class="drop-zone" id="dropZone">
+            <input type="file" id="resumeFile" accept=".pdf,.docx,.txt">
+            <div class="drop-icon">📄</div>
+            <div class="drop-label">Drop your resume here or <strong>click to browse</strong></div>
+            <div class="drop-hint">PDF, DOCX, or TXT — auto-fills your background and skills</div>
+          </div>
+          <div class="parse-status" id="parseStatus"></div>
+        </div>
+
         <div>
           <label>Your Background</label>
-          <textarea name="background" placeholder="Who are you, what have you built, what kind of role are you looking for?">American data scientist and AI developer. I've built multi-agent AI systems in Python using the Anthropic SDK, including an automated job market analyzer. Looking for remote AI/data engineering roles with US companies.</textarea>
+          <textarea name="background" id="bgField" placeholder="Who are you, what have you built, what kind of role are you looking for?">American data scientist and AI developer. I've built multi-agent AI systems in Python using the Anthropic SDK, including an automated job market analyzer. Looking for remote AI/data engineering roles with US companies.</textarea>
         </div>
+
         <div class="form-row">
           <div>
             <label>Your Skills (comma-separated)</label>
-            <input type="text" name="skills" value="Python, Claude API, data science, machine learning, LLMs, SQL, Git">
+            <input type="text" name="skills" id="skillsField" value="Python, Claude API, data science, machine learning, LLMs, SQL, Git">
           </div>
           <div>
             <label>Demo Password</label>
             <input type="password" name="password" placeholder="Leave blank if none">
           </div>
         </div>
+
       </div>
       <button type="submit" class="run-btn" id="runBtn">
         <div class="spinner"></div>
@@ -516,6 +565,69 @@
   function copyText(id) {
     const text = document.getElementById(id).textContent;
     navigator.clipboard.writeText(text).catch(() => {});
+  }
+
+  // ── Resume upload ──
+  const dropZone = document.getElementById('dropZone');
+  const resumeFile = document.getElementById('resumeFile');
+  const parseStatus = document.getElementById('parseStatus');
+
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('drag-over');
+  });
+
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) handleResumeFile(file);
+  });
+
+  resumeFile.addEventListener('change', () => {
+    if (resumeFile.files[0]) handleResumeFile(resumeFile.files[0]);
+  });
+
+  async function handleResumeFile(file) {
+    const allowed = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+    const nameOk = file.name.match(/\.(pdf|docx|txt)$/i);
+    if (!nameOk) {
+      setParseStatus('Unsupported file type. Use PDF, DOCX, or TXT.', 'err');
+      return;
+    }
+
+    // Show filename in drop zone
+    dropZone.classList.add('has-file');
+    dropZone.querySelector('.drop-label').innerHTML = `<strong>${file.name}</strong>`;
+    setParseStatus('Reading resume…', '');
+
+    const fd = new FormData();
+    fd.append('resume', file);
+
+    try {
+      const res = await fetch('/parse-resume', { method: 'POST', body: fd });
+      const data = await res.json();
+
+      if (data.error) {
+        setParseStatus(data.error, 'err');
+        dropZone.classList.remove('has-file');
+        return;
+      }
+
+      if (data.background) document.getElementById('bgField').value = data.background;
+      if (data.skills) document.getElementById('skillsField').value = data.skills;
+      setParseStatus('Resume parsed — review and edit below, then click Run.', 'ok');
+
+    } catch (err) {
+      setParseStatus('Upload failed: ' + err.message, 'err');
+    }
+  }
+
+  function setParseStatus(msg, cls) {
+    parseStatus.textContent = msg;
+    parseStatus.className = 'parse-status' + (cls ? ' ' + cls : '');
   }
 </script>
 
