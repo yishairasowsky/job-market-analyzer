@@ -235,7 +235,12 @@ def run():
 
     def generate():
         while True:
-            item = q.get()
+            try:
+                item = q.get(timeout=25)
+            except queue.Empty:
+                # Keepalive comment — prevents Render's proxy from closing the connection
+                yield ": keepalive\n\n"
+                continue
             if item is None:
                 break
             yield _event(**item)
