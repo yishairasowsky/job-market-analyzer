@@ -89,14 +89,14 @@
     .pipeline-step .step-name {
       font-size: 0.72rem;
       font-weight: 700;
-      color: var(--muted);
+      color: var(--text);
       margin-bottom: 0.35rem;
       transition: color 0.3s;
     }
 
     .pipeline-step .step-does {
       font-size: 0.68rem;
-      color: #374151;
+      color: #94a3b8;
       line-height: 1.4;
       margin-bottom: 0.35rem;
       transition: color 0.3s;
@@ -106,7 +106,7 @@
       font-size: 0.67rem;
       font-weight: 600;
       color: var(--accent);
-      opacity: 0.5;
+      opacity: 0.8;
       transition: opacity 0.3s;
     }
 
@@ -641,23 +641,6 @@
   </div>
 </section>
 
-{% if report %}
-<section id="prevSection">
-  <div class="container">
-    <h2>Last Run — {{ report_date }}</h2>
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('prev-report', this)">Report</button>
-      <button class="tab-btn" onclick="switchTab('prev-outreach', this)">Outreach</button>
-    </div>
-    <div class="tab-panel active" id="tab-prev-report">
-      <div class="output-box">{{ report }}</div>
-    </div>
-    <div class="tab-panel" id="tab-prev-outreach">
-      <div class="output-box">{{ outreach or "No outreach messages from this run." }}</div>
-    </div>
-  </div>
-</section>
-{% endif %}
 
 <footer>
   <div class="container">
