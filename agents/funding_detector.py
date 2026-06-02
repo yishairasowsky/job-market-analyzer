@@ -17,6 +17,7 @@ import re
 import anthropic
 import os
 import sys
+import concurrent.futures
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from config import MAX_COMPANIES_TO_CHECK, MODEL
 
@@ -79,16 +80,33 @@ def detect_funding(jobs, on_progress=None):
             if not company:
                 continue
             progress(f"  Checking {company}...")
-            search_text = _search_funding_news(company)
-            if not search_text:
-                continue
             try:
-                response = client.messages.create(
-                    model=MODEL,
-                    max_tokens=150,
-                    messages=[{
-                        "role": "user",
-                        "content": f"""Did the company "{company}" receive investment funding in 2024, 2025, or 2026?
+                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+                    future = ex.submit(_check_company_funding, company, client)
+                    result = future.result(timeout=15)
+                if result:
+                    funded.append({"company": company, "funding": result})
+                    already_found.add(company)
+                    progress(f"  Funded (web search): {company} — {result}")
+            except concurrent.futures.TimeoutError:
+                progress(f"  Skipping {company} — search timed out")
+            except Exception as e:
+                progress(f"  Could not check {company}: {e}")
+
+    progress(f"  Found {len(funded)} recently funded companies.")
+    return funded
+
+
+def _check_company_funding(company, client):
+    search_text = _search_funding_news(company)
+    if not search_text:
+        return None
+    response = client.messages.create(
+        model=MODEL,
+        max_tokens=150,
+        messages=[{
+            "role": "user",
+            "content": f"""Did the company "{company}" receive investment funding in 2024, 2025, or 2026?
 
 Search results:
 {search_text}
@@ -97,19 +115,12 @@ Reply with ONLY one of:
 YES: [round and amount if known, e.g. "Series A, $12M, March 2025"]
 NO
 UNCLEAR"""
-                    }]
-                )
-                answer = response.content[0].text.strip()
-                if answer.upper().startswith("YES"):
-                    detail = answer[4:].strip() if len(answer) > 4 else "recently funded"
-                    funded.append({"company": company, "funding": detail})
-                    already_found.add(company)
-                    progress(f"  Funded (web search): {company} — {detail}")
-            except Exception as e:
-                progress(f"  Could not check {company}: {e}")
-
-    progress(f"  Found {len(funded)} recently funded companies.")
-    return funded
+        }]
+    )
+    answer = response.content[0].text.strip()
+    if answer.upper().startswith("YES"):
+        return answer[4:].strip() if len(answer) > 4 else "recently funded"
+    return None
 
 
 def _extract_funding_from_text(text):
@@ -128,7 +139,8 @@ def _search_funding_news(company):
         with DDGS() as ddgs:
             results = list(ddgs.text(
                 f'"{company}" funding raised million 2024 OR 2025 OR 2026 startup',
-                max_results=3
+                max_results=3,
+                timeout=8,
             ))
         return "\n".join([r.get("body", "") for r in results if r.get("body")])
     except Exception:
