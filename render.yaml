@@ -4,7 +4,7 @@ services:
     runtime: python
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: python -m gunicorn app:app
+    startCommand: python -m gunicorn app:app --timeout 300
     envVars:
       - key: ANTHROPIC_API_KEY
         sync: false
