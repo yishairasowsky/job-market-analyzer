@@ -72,7 +72,14 @@ def detect_funding(jobs, on_progress=None):
     else:
         hn_companies = [j["company"] for j in jobs if "hn_hiring" in j.get("source", "") and j["company"] not in already_found]
         other_companies = [j["company"] for j in jobs if "hn_hiring" not in j.get("source", "") and j["company"] not in already_found]
-        companies_to_check = (hn_companies + other_companies)[:MAX_COMPANIES_TO_CHECK]
+        # Deduplicate while preserving order (HN first)
+        seen_names = set()
+        companies_to_check = []
+        for c in hn_companies + other_companies:
+            if c and c not in seen_names:
+                seen_names.add(c)
+                companies_to_check.append(c)
+        companies_to_check = companies_to_check[:MAX_COMPANIES_TO_CHECK]
 
         client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 

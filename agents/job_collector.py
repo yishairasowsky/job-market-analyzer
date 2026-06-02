@@ -258,6 +258,9 @@ def _fetch_hn_hiring(progress=None):
             parts = [p.strip() for p in first_line.split("|")]
             company = parts[0] if parts else "Unknown"
             title = parts[1] if len(parts) > 1 else "See posting"
+            # Skip if company field looks like a job title list, not a company name
+            if _looks_like_job_title(company):
+                continue
 
             url_match = re.search(r'https?://\S+', raw_text)
             url = url_match.group(0).rstrip(".,)") if url_match else \
@@ -281,6 +284,14 @@ def _fetch_hn_hiring(progress=None):
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+def _looks_like_job_title(name):
+    """Return True if the 'company' name is actually a job title or role list."""
+    title_words = ['developer', 'engineer', 'intern', 'manager', 'designer',
+                   'analyst', 'scientist', 'architect', 'lead', 'director']
+    name_lower = name.lower()
+    return sum(1 for w in title_words if w in name_lower) >= 2
+
 
 def _is_excluded_location(job):
     location = (job.get("location") or "").lower()
