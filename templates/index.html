@@ -537,12 +537,12 @@
 
         <div>
           <label>Your Background</label>
-          <textarea name="background" id="bgField" placeholder="Who are you, what have you built, what kind of role are you looking for?">American data scientist and AI developer. I've built multi-agent AI systems in Python using the Anthropic SDK, including an automated job market analyzer. Looking for remote AI/data engineering roles with US companies.</textarea>
+          <textarea name="background" id="bgField" placeholder="Who are you, what have you built, what kind of role are you looking for?"></textarea>
         </div>
 
         <div>
           <label>Your Skills (comma-separated)</label>
-          <input type="text" name="skills" id="skillsField" value="Python, Claude API, data science, machine learning, LLMs, SQL, Git">
+          <input type="text" name="skills" id="skillsField" placeholder="Python, machine learning, SQL…">
         </div>
 
       </div>
@@ -832,7 +832,8 @@
 
       if (data.background) document.getElementById('bgField').value = data.background;
       if (data.skills) document.getElementById('skillsField').value = data.skills;
-      setParseStatus('Resume parsed — review and edit below, then click Run.', 'ok');
+      setParseStatus('Resume parsed — running analysis…', 'ok');
+      setTimeout(() => runPipeline(), 300);
 
     } catch (err) {
       setParseStatus('Upload failed: ' + err.message, 'err');
