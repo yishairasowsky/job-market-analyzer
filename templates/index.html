@@ -383,11 +383,74 @@
     footer a { color: var(--muted); text-decoration: none; }
     footer a:hover { color: var(--text); }
 
-    /* ── Chat ── */
-    .chat-section {
-      padding: 2rem 0;
+    /* ── Hero section ── */
+    .hero-section {
+      padding: 3rem 0;
       border-bottom: 1px solid var(--border);
     }
+
+    .hero-drop {
+      border: 2px dashed var(--border);
+      border-radius: 16px;
+      padding: 3rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      margin-bottom: 0.75rem;
+    }
+
+    .hero-drop:hover, .hero-drop.drag-over {
+      border-color: var(--accent);
+      background: rgba(99,102,241,0.05);
+    }
+
+    .hero-drop input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+
+    .hero-drop-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+    .hero-drop-title { font-size: 1.15rem; font-weight: 700; color: var(--text); margin-bottom: 0.4rem; }
+    .hero-drop-sub { font-size: 0.88rem; color: var(--muted); }
+
+    .hero-drop.has-file { border-color: var(--green); background: rgba(34,197,94,0.05); }
+    .hero-drop.has-file .hero-drop-title { color: var(--green); }
+
+    .or-divider {
+      text-align: center;
+      margin: 1.75rem 0;
+      position: relative;
+    }
+    .or-divider::before {
+      content: '';
+      position: absolute;
+      top: 50%; left: 0; right: 0;
+      height: 1px;
+      background: var(--border);
+    }
+    .or-divider span {
+      position: relative;
+      background: var(--bg);
+      padding: 0 1rem;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .advanced-settings {
+      margin-top: 1.75rem;
+    }
+    .advanced-settings summary {
+      color: var(--muted);
+      font-size: 0.82rem;
+      cursor: pointer;
+      user-select: none;
+      list-style: none;
+    }
+    .advanced-settings summary:hover { color: var(--accent); }
+    .advanced-settings summary::before { content: '⚙ '; }
+    .adv-grid { display: grid; gap: 1rem; margin: 1rem 0; }
+
+    /* ── Chat ── */
 
     #chatMessages {
       display: flex;
@@ -509,48 +572,45 @@
   </div>
 </header>
 
-<section class="chat-section">
+<section class="hero-section">
   <div class="container">
+
+    <div class="hero-drop" id="dropZone">
+      <input type="file" id="resumeFile" accept=".pdf,.docx,.txt">
+      <div class="hero-drop-icon">📄</div>
+      <div class="hero-drop-title">Drop your resume to get started</div>
+      <div class="hero-drop-sub">PDF, DOCX, or TXT — we'll run the full analysis automatically</div>
+    </div>
+    <div class="parse-status" id="parseStatus"></div>
+
+    <div class="or-divider"><span>or describe what you're looking for</span></div>
+
     <div id="chatMessages"></div>
     <div class="chat-input-row">
-      <input type="text" id="chatInput" placeholder="Tell me what you're looking for and I'll run the analysis…" autocomplete="off">
-      <button id="chatSend">→</button>
+      <input type="text" id="chatInput" placeholder="e.g. I'm a Python ML engineer, find me remote AI jobs at funded startups" autocomplete="off">
+      <button id="chatSend" type="button">→</button>
     </div>
-  </div>
-</section>
 
-<section class="form-section">
-  <div class="container">
-    <form id="analyzeForm">
-      <div class="form-grid">
-
-        <div>
-          <label>Upload Resume (optional)</label>
-          <div class="drop-zone" id="dropZone">
-            <input type="file" id="resumeFile" accept=".pdf,.docx,.txt">
-            <div class="drop-icon">📄</div>
-            <div class="drop-label">Drop your resume here or <strong>click to browse</strong></div>
-            <div class="drop-hint">PDF, DOCX, or TXT — auto-fills your background and skills</div>
+    <details class="advanced-settings">
+      <summary>Advanced settings</summary>
+      <form id="analyzeForm">
+        <div class="adv-grid">
+          <div>
+            <label>Your Background</label>
+            <textarea name="background" id="bgField" placeholder="Who are you, what have you built, what kind of role are you looking for?"></textarea>
           </div>
-          <div class="parse-status" id="parseStatus"></div>
+          <div>
+            <label>Your Skills (comma-separated)</label>
+            <input type="text" name="skills" id="skillsField" placeholder="Python, machine learning, SQL…">
+          </div>
         </div>
+        <button type="submit" class="run-btn" id="runBtn">
+          <div class="spinner"></div>
+          <span class="btn-text"></span>
+        </button>
+      </form>
+    </details>
 
-        <div>
-          <label>Your Background</label>
-          <textarea name="background" id="bgField" placeholder="Who are you, what have you built, what kind of role are you looking for?"></textarea>
-        </div>
-
-        <div>
-          <label>Your Skills (comma-separated)</label>
-          <input type="text" name="skills" id="skillsField" placeholder="Python, machine learning, SQL…">
-        </div>
-
-      </div>
-      <button type="submit" class="run-btn" id="runBtn">
-        <div class="spinner"></div>
-        <span class="btn-text"></span>
-      </button>
-    </form>
     <div class="error-msg" id="errorMsg"></div>
   </div>
 </section>
@@ -814,7 +874,7 @@
 
     // Show filename in drop zone
     dropZone.classList.add('has-file');
-    dropZone.querySelector('.drop-label').innerHTML = `<strong>${file.name}</strong>`;
+    dropZone.querySelector('.hero-drop-title').textContent = file.name;
     setParseStatus('Reading resume…', '');
 
     const fd = new FormData();
