@@ -151,6 +151,48 @@ def _parse_resume_response(text):
     return background, skills
 
 
+@app.route("/chat", methods=["POST"])
+def chat():
+    data = request.get_json(silent=True) or {}
+    message = data.get("message", "").strip()
+
+    if not message:
+        return jsonify({"error": "Empty message."}), 400
+
+    client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+    last_report, _ = _latest_file(REPORTS_DIR)
+    context = f"\n\nLast report on file:\n{last_report[:2000]}" if last_report else ""
+
+    response = client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=300,
+        messages=[{"role": "user", "content": f"""Extract job search context from this message and reply naturally.
+
+Message: "{message}"{context}
+
+Reply in exactly this format:
+BACKGROUND: [1-2 sentences about who they are and what they want. If not mentioned, leave blank]
+SKILLS: [comma-separated skills. If not mentioned, leave blank]
+REPLY: [1 warm sentence: acknowledge what they asked, say you're kicking off the analysis]"""}]
+    )
+
+    raw = response.content[0].text.strip()
+    background, skills_str, reply = "", "", "On it — running your job market analysis now."
+
+    try:
+        if "BACKGROUND:" in raw and "SKILLS:" in raw and "REPLY:" in raw:
+            bg_start = raw.index("BACKGROUND:") + len("BACKGROUND:")
+            sk_start = raw.index("SKILLS:")
+            rp_start = raw.index("REPLY:")
+            background = raw[bg_start:sk_start].strip()
+            skills_str = raw[sk_start + len("SKILLS:"):rp_start].strip()
+            reply = raw[rp_start + len("REPLY:"):].strip()
+    except Exception:
+        pass
+
+    return jsonify({"background": background, "skills": skills_str, "reply": reply})
+
+
 @app.route("/run", methods=["POST"])
 def run():
     user_background = request.form.get("background", "").strip()

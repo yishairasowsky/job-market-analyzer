@@ -382,6 +382,84 @@
     }
     footer a { color: var(--muted); text-decoration: none; }
     footer a:hover { color: var(--text); }
+
+    /* ── Chat ── */
+    .chat-section {
+      padding: 2rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    #chatMessages {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      margin-bottom: 1rem;
+    }
+
+    .chat-bubble {
+      max-width: 78%;
+      padding: 0.7rem 1rem;
+      border-radius: 14px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+
+    .chat-bubble.user {
+      background: var(--accent);
+      color: #fff;
+      align-self: flex-end;
+      border-radius: 14px 14px 3px 14px;
+    }
+
+    .chat-bubble.assistant {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      align-self: flex-start;
+      border-radius: 14px 14px 14px 3px;
+    }
+
+    .chat-bubble.assistant.thinking {
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .chat-input-row {
+      display: flex;
+      gap: 0.6rem;
+    }
+
+    #chatInput {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.95rem;
+      padding: 0.75rem 1rem;
+      transition: border-color 0.2s;
+    }
+
+    #chatInput:focus { outline: none; border-color: var(--accent); }
+
+    #chatInput::placeholder { color: var(--muted); }
+
+    #chatSend {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 0.75rem 1.25rem;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+
+    #chatSend:hover { background: #4f46e5; }
+    #chatSend:disabled { opacity: 0.4; cursor: not-allowed; }
   </style>
 </head>
 <body>
@@ -430,6 +508,16 @@
     </div>
   </div>
 </header>
+
+<section class="chat-section">
+  <div class="container">
+    <div id="chatMessages"></div>
+    <div class="chat-input-row">
+      <input type="text" id="chatInput" placeholder="Tell me what you're looking for and I'll run the analysis…" autocomplete="off">
+      <button id="chatSend">→</button>
+    </div>
+  </div>
+</section>
 
 <section class="form-section">
   <div class="container">
@@ -524,10 +612,13 @@
   const logBox = document.getElementById('logBox');
   const errorMsg = document.getElementById('errorMsg');
 
-  form.addEventListener('submit', async (e) => {
+  form.addEventListener('submit', (e) => {
     e.preventDefault();
-    startRun();
+    runPipeline();
+  });
 
+  async function runPipeline() {
+    startRun();
     const formData = new FormData(form);
 
     try {
@@ -542,7 +633,7 @@
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
-        buffer = lines.pop(); // keep incomplete line
+        buffer = lines.pop();
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
@@ -558,7 +649,59 @@
     } finally {
       endRun();
     }
+  }
+
+  // ── Chat ──
+  const chatInput = document.getElementById('chatInput');
+  const chatSend = document.getElementById('chatSend');
+
+  chatSend.addEventListener('click', sendChat);
+  chatInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
   });
+
+  async function sendChat() {
+    const message = chatInput.value.trim();
+    if (!message || chatSend.disabled) return;
+
+    chatInput.value = '';
+    chatSend.disabled = true;
+
+    addChatBubble('user', message);
+    const thinkingBubble = addChatBubble('assistant', 'thinking…', true);
+
+    try {
+      const res = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message })
+      });
+      const data = await res.json();
+
+      thinkingBubble.classList.remove('thinking');
+      thinkingBubble.textContent = data.reply || 'Running your analysis now…';
+
+      if (data.background) document.getElementById('bgField').value = data.background;
+      if (data.skills) document.getElementById('skillsField').value = data.skills;
+
+      document.querySelector('header').scrollIntoView({ behavior: 'smooth' });
+      setTimeout(() => runPipeline(), 400);
+
+    } catch (err) {
+      thinkingBubble.classList.remove('thinking');
+      thinkingBubble.textContent = 'Something went wrong — try the form below.';
+      chatSend.disabled = false;
+    }
+  }
+
+  function addChatBubble(role, text, thinking = false) {
+    const messages = document.getElementById('chatMessages');
+    const bubble = document.createElement('div');
+    bubble.className = `chat-bubble ${role}${thinking ? ' thinking' : ''}`;
+    bubble.textContent = text;
+    messages.appendChild(bubble);
+    return bubble;
+  }
 
   function handleEvent(e) {
     if (e.type === 'agent_start') {
@@ -623,6 +766,7 @@
   function endRun() {
     runBtn.disabled = false;
     runBtn.classList.remove('loading');
+    document.getElementById('chatSend').disabled = false;
   }
 
   function switchTab(id, btn) {
