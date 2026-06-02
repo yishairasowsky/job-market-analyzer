@@ -855,10 +855,12 @@
       return;
     }
 
-    // Show filename in drop zone
+    // Show loading state in drop zone
     dropZone.classList.add('has-file');
-    dropZone.querySelector('.hero-drop-title').textContent = file.name;
-    setParseStatus('Reading resume…', '');
+    dropZone.querySelector('.hero-drop-icon').textContent = '⏳';
+    dropZone.querySelector('.hero-drop-title').textContent = 'Reading resume…';
+    dropZone.querySelector('.hero-drop-sub').textContent = file.name;
+    setParseStatus('', '');
 
     const fd = new FormData();
     fd.append('resume', file);
@@ -875,7 +877,9 @@
 
       if (data.background) document.getElementById('bgField').value = data.background;
       if (data.skills) document.getElementById('skillsField').value = data.skills;
-      setParseStatus('Resume parsed — running analysis…', 'ok');
+      dropZone.querySelector('.hero-drop-icon').textContent = '✅';
+      dropZone.querySelector('.hero-drop-title').textContent = file.name;
+      dropZone.querySelector('.hero-drop-sub').textContent = 'Resume parsed — running analysis…';
       setTimeout(() => runPipeline(), 300);
 
     } catch (err) {
