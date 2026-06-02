@@ -681,9 +681,6 @@
       thinkingBubble.classList.remove('thinking');
       thinkingBubble.textContent = data.reply || 'Running your analysis now…';
 
-      if (data.background) document.getElementById('bgField').value = data.background;
-      if (data.skills) document.getElementById('skillsField').value = data.skills;
-
       document.querySelector('header').scrollIntoView({ behavior: 'smooth' });
       setTimeout(() => runPipeline(), 400);
 
