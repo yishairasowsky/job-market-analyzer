@@ -42,70 +42,117 @@
 
     /* ── Pipeline diagram ── */
     .pipeline {
-      display: flex;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
       gap: 0;
-      margin-top: 1.5rem;
-      overflow-x: auto;
+      margin-top: 2rem;
+      position: relative;
     }
 
-    .agent-pill {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
+    .pipeline-step {
+      position: relative;
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 0.45rem 0.8rem;
-      font-size: 0.78rem;
-      color: var(--muted);
-      white-space: nowrap;
-      transition: all 0.3s;
-      flex: 1;
-    }
-
-    .agent-pill:not(:last-child) {
       border-right: none;
-      border-radius: 6px 0 0 6px;
-    }
-    .agent-pill:not(:first-child) {
-      border-radius: 0 6px 6px 0;
-    }
-    .agent-pill:not(:first-child):not(:last-child) {
-      border-radius: 0;
+      padding: 1rem 0.75rem;
+      transition: all 0.3s;
     }
 
-    .agent-pill .num {
-      width: 20px; height: 20px;
+    .pipeline-step:first-child { border-radius: 8px 0 0 8px; }
+    .pipeline-step:last-child  { border-radius: 0 8px 8px 0; border-right: 1px solid var(--border); }
+
+    /* arrow between steps */
+    .pipeline-step:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      right: -8px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 0; height: 0;
+      border-top: 7px solid transparent;
+      border-bottom: 7px solid transparent;
+      border-left: 8px solid var(--border);
+      z-index: 2;
+    }
+
+    .pipeline-step .step-num {
+      width: 22px; height: 22px;
       border-radius: 50%;
       background: var(--border);
       display: flex; align-items: center; justify-content: center;
-      font-size: 0.7rem; font-weight: 700;
-      flex-shrink: 0;
+      font-size: 0.68rem; font-weight: 800;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
       transition: all 0.3s;
     }
 
-    .agent-pill.running {
-      border-color: var(--accent);
-      color: var(--text);
-    }
-    .agent-pill.running .num {
-      background: var(--accent);
-      color: #fff;
-      animation: pulse 1.2s infinite;
+    .pipeline-step .step-name {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+      transition: color 0.3s;
     }
 
-    .agent-pill.done {
+    .pipeline-step .step-does {
+      font-size: 0.68rem;
+      color: #374151;
+      line-height: 1.4;
+      margin-bottom: 0.35rem;
+      transition: color 0.3s;
+    }
+
+    .pipeline-step .step-out {
+      font-size: 0.67rem;
+      font-weight: 600;
+      color: var(--accent);
+      opacity: 0.5;
+      transition: opacity 0.3s;
+    }
+
+    /* running state */
+    .pipeline-step.running {
+      border-color: var(--accent);
+      background: rgba(99,102,241,0.06);
+    }
+    .pipeline-step.running:not(:last-child)::after { border-left-color: var(--accent); }
+    .pipeline-step.running .step-num {
+      background: var(--accent); color: #fff;
+      animation: pulse 1.2s infinite;
+    }
+    .pipeline-step.running .step-name { color: var(--text); }
+    .pipeline-step.running .step-does { color: #94a3b8; }
+    .pipeline-step.running .step-out  { opacity: 1; }
+
+    /* done state */
+    .pipeline-step.done {
       border-color: var(--green);
-      color: var(--text);
+      background: rgba(34,197,94,0.05);
     }
-    .agent-pill.done .num {
-      background: var(--green);
-      color: #fff;
-    }
+    .pipeline-step.done:not(:last-child)::after { border-left-color: var(--green); }
+    .pipeline-step.done .step-num { background: var(--green); color: #fff; }
+    .pipeline-step.done .step-name { color: var(--text); }
+    .pipeline-step.done .step-does { color: #94a3b8; }
+    .pipeline-step.done .step-out  { color: var(--green); opacity: 1; }
 
     @keyframes pulse {
       0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
+      50% { opacity: 0.4; }
+    }
+
+    @media (max-width: 650px) {
+      .pipeline { grid-template-columns: 1fr; }
+      .pipeline-step { border-right: 1px solid var(--border); border-bottom: none; border-radius: 0; }
+      .pipeline-step:first-child { border-radius: 8px 8px 0 0; }
+      .pipeline-step:last-child  { border-radius: 0 0 8px 8px; border-bottom: 1px solid var(--border); }
+      .pipeline-step:not(:last-child)::after {
+        top: auto; bottom: -8px; right: auto; left: 1.2rem;
+        transform: none;
+        border-left: 7px solid transparent;
+        border-right: 7px solid transparent;
+        border-top: 8px solid var(--border);
+        border-bottom: none;
+      }
     }
 
     /* ── Form ── */
@@ -344,11 +391,42 @@
     <h1>Job Market <span>Analyzer</span></h1>
     <p class="tagline">Enter your background. Watch 5 AI agents find jobs, detect funded companies, and write your outreach — live.</p>
     <div class="pipeline">
-      <div class="agent-pill" id="agent-1"><div class="num">1</div> Job Collector</div>
-      <div class="agent-pill" id="agent-2"><div class="num">2</div> Funding Detector</div>
-      <div class="agent-pill" id="agent-3"><div class="num">3</div> Skills Analyzer</div>
-      <div class="agent-pill" id="agent-4"><div class="num">4</div> Report Writer</div>
-      <div class="agent-pill" id="agent-5"><div class="num">5</div> Outreach Writer</div>
+
+      <div class="pipeline-step" id="agent-1">
+        <div class="step-num">1</div>
+        <div class="step-name">Job Collector</div>
+        <div class="step-does">Scans HN Who's Hiring, Remotive, RemoteOK & Arbeitnow for relevant remote roles</div>
+        <div class="step-out">↓ Job listings</div>
+      </div>
+
+      <div class="pipeline-step" id="agent-2">
+        <div class="step-num">2</div>
+        <div class="step-name">Funding Detector</div>
+        <div class="step-does">Searches the web to find which companies recently raised money — they're actively hiring</div>
+        <div class="step-out">↓ Funded companies</div>
+      </div>
+
+      <div class="pipeline-step" id="agent-3">
+        <div class="step-num">3</div>
+        <div class="step-name">Skills Analyzer</div>
+        <div class="step-does">Reads all postings and extracts what the market wants vs. what you already have</div>
+        <div class="step-out">↓ Skills gap report</div>
+      </div>
+
+      <div class="pipeline-step" id="agent-4">
+        <div class="step-num">4</div>
+        <div class="step-name">Report Writer</div>
+        <div class="step-does">Synthesizes everything into a personalized weekly report with priority companies and actions</div>
+        <div class="step-out">↓ Your report</div>
+      </div>
+
+      <div class="pipeline-step" id="agent-5">
+        <div class="step-num">5</div>
+        <div class="step-name">Outreach Writer</div>
+        <div class="step-does">For each top company, researches what they do and writes a LinkedIn message + cold email</div>
+        <div class="step-out">↓ Ready to send</div>
+      </div>
+
     </div>
   </div>
 </header>
@@ -505,7 +583,7 @@
   function setAgentState(num, state) {
     const el = document.getElementById('agent-' + num);
     if (el) {
-      el.className = 'agent-pill ' + state;
+      el.className = 'pipeline-step ' + state;
     }
   }
 
