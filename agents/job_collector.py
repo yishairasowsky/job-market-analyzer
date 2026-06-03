@@ -17,6 +17,7 @@ import requests
 import sys
 import os
 import concurrent.futures
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -210,7 +211,12 @@ def _fetch_hn_hiring(progress=None):
         )
         search_resp.raise_for_status()
         hits = search_resp.json().get("hits", [])
-        threads = [h for h in hits if "who is hiring" in h.get("title", "").lower()][:HN_THREADS_TO_FETCH]
+        cutoff = datetime.now(timezone.utc) - timedelta(days=60)
+        threads = [
+            h for h in hits
+            if "who is hiring" in h.get("title", "").lower()
+            and _parse_hn_date(h.get("created_at", "")) > cutoff
+        ][:HN_THREADS_TO_FETCH]
     except Exception as e:
         msg = f"  Warning: HN search unavailable — {e}"
         print(msg)
@@ -279,6 +285,13 @@ def _fetch_hn_hiring(progress=None):
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+def _parse_hn_date(date_str):
+    try:
+        return datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+    except Exception:
+        return datetime.min.replace(tzinfo=timezone.utc)
+
 
 def _looks_like_job_title(name):
     """Return True if the 'company' name is actually a job title or role list."""
