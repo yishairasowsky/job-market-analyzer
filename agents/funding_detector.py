@@ -83,25 +83,42 @@ def detect_funding(jobs, on_progress=None):
 
         client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
-        for company in companies_to_check:
-            if not company:
-                continue
-            progress(f"  Checking {company}...")
-            try:
-                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
-                    future = ex.submit(_check_company_funding, company, client)
-                    result = future.result(timeout=15)
-                if result:
-                    funded.append({"company": company, "funding": result})
-                    already_found.add(company)
-                    progress(f"  Funded (web search): {company} — {result}")
-            except concurrent.futures.TimeoutError:
-                progress(f"  Skipping {company} — search timed out")
-            except Exception as e:
-                progress(f"  Could not check {company}: {e}")
+        valid_companies = [c for c in companies_to_check if c]
+        for c in valid_companies:
+            progress(f"  Checking {c}...")
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as outer:
+            future_to_company = {
+                outer.submit(_check_company_safe, c, client): c
+                for c in valid_companies
+            }
+            for future in concurrent.futures.as_completed(future_to_company):
+                company = future_to_company[future]
+                try:
+                    result = future.result()
+                    if result == "TIMEOUT":
+                        progress(f"  Skipping {company} — search timed out")
+                    elif result:
+                        funded.append({"company": company, "funding": result})
+                        already_found.add(company)
+                        progress(f"  Funded: {company} — {result}")
+                except Exception as e:
+                    progress(f"  Could not check {company}: {e}")
 
     progress(f"  Found {len(funded)} recently funded companies.")
     return funded
+
+
+def _check_company_safe(company, client):
+    """Wraps _check_company_funding with a 15s timeout."""
+    try:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+            f = ex.submit(_check_company_funding, company, client)
+            return f.result(timeout=15)
+    except concurrent.futures.TimeoutError:
+        return "TIMEOUT"
+    except Exception:
+        return None
 
 
 def _check_company_funding(company, client):

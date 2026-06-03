@@ -233,6 +233,23 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* ── Progress bar ── */
+    .progress-wrap {
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      margin: 1.5rem 0 0;
+      overflow: hidden;
+      display: none;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #818cf8);
+      border-radius: 3px;
+      width: 0%;
+      transition: width 1.2s ease;
+    }
+
     /* ── Live log ── */
     #liveSection {
       padding: 2rem 0;
@@ -569,6 +586,9 @@
       </div>
 
     </div>
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
   </div>
 </header>
 
@@ -763,10 +783,13 @@
     }
   }
 
+  const progressMilestones = [0, 15, 50, 62, 78, 100];
+
   function setAgentState(num, state) {
     const el = document.getElementById('agent-' + num);
-    if (el) {
-      el.className = 'pipeline-step ' + state;
+    if (el) el.className = 'pipeline-step ' + state;
+    if (state === 'done') {
+      document.getElementById('progressFill').style.width = progressMilestones[num] + '%';
     }
   }
 
@@ -804,12 +827,20 @@
     runBtn.disabled = true;
     runBtn.classList.add('loading');
     [1,2,3,4,5].forEach(n => setAgentState(n, ''));
+    const wrap = document.getElementById('progressWrap');
+    const fill = document.getElementById('progressFill');
+    wrap.style.display = 'block';
+    fill.style.transition = 'none';
+    fill.style.width = '2%';
+    setTimeout(() => { fill.style.transition = 'width 1.2s ease'; }, 50);
   }
 
   function endRun() {
     runBtn.disabled = false;
     runBtn.classList.remove('loading');
     document.getElementById('chatSend').disabled = false;
+    document.getElementById('progressFill').style.width = '100%';
+    setTimeout(() => { document.getElementById('progressWrap').style.display = 'none'; }, 1500);
   }
 
   function switchTab(id, btn) {

@@ -9,6 +9,7 @@ LinkedIn message ready to send.
 import anthropic
 import os
 import sys
+import concurrent.futures
 from datetime import date
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from config import MODEL, MY_BACKGROUND, MY_SKILLS
@@ -77,16 +78,13 @@ def write_outreach(jobs, funded_companies, user_background=None, user_skills=Non
         progress("  No targets found.")
         return ""
 
-    messages = []
-
     for i, target in enumerate(targets, 1):
+        progress(f"  [{i}/{len(targets)}] Writing for {target['company']}...")
+
+    def _write_one(i, target):
         company = target["company"]
-        progress(f"  [{i}/{len(targets)}] Writing outreach for {company}...")
-
         company_context = _research_company(company, target["description"])
-
         funding_note = f"They recently received funding ({target['funding']})." if target["funding"] else ""
-
         prompt = f"""Today is {today}. You are writing a short, personalized cold outreach message on behalf of a job seeker.
 
 ABOUT THE SENDER:
@@ -112,21 +110,24 @@ MESSAGE 2 — Cold email (5-7 sentences, plain text):
 Subject line on its own line, then the body. Open with something specific about the company, explain who you are and why you're a fit, and close with a clear ask (a 20-minute call).
 
 Write both messages in first person as if you are the sender. Be direct and confident, not salesy. No emojis."""
-
         try:
             response = client.messages.create(
                 model=MODEL,
                 max_tokens=400,
                 messages=[{"role": "user", "content": prompt}]
             )
-            message_text = response.content[0].text.strip()
+            return i, _format_block(target, response.content[0].text.strip())
         except Exception as e:
-            progress(f"    Error generating message for {company}: {e}")
-            message_text = "[Error generating message]"
+            return i, _format_block(target, f"[Error: {e}]")
 
-        block = _format_block(target, message_text)
-        messages.append(block)
+    results = {}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as ex:
+        futures = {ex.submit(_write_one, i, t): i for i, t in enumerate(targets, 1)}
+        for future in concurrent.futures.as_completed(futures):
+            i, block = future.result()
+            results[i] = block
 
+    messages = [results[i] for i in sorted(results)]
     progress(f"  Done. Wrote {len(messages)} outreach messages.")
 
     separator = "\n" + "=" * 60 + "\n"

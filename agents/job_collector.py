@@ -16,6 +16,7 @@ import json
 import requests
 import sys
 import os
+import concurrent.futures
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -40,29 +41,23 @@ def collect_jobs(on_progress=None):
 
     seen_urls = _load_seen_urls()
 
-    # HN first — highest quality US startup jobs with funding mentions
-    # Remotive and RemoteOK next — US remote
-    # Arbeitnow last — European, lower signal for this user
-    all_raw = []
-    hn = _fetch_hn_hiring(progress)
-    all_raw += hn
-    if hn:
-        progress(f"  HN Who's Hiring: {len(hn)} relevant posts")
+    # Fetch all sources in parallel
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as ex:
+        hn_f       = ex.submit(_fetch_hn_hiring, progress)
+        remotive_f = ex.submit(_fetch_remotive, progress)
+        remoteok_f = ex.submit(_fetch_remoteok, progress)
+        arbeitnow_f = ex.submit(_fetch_arbeitnow, progress)
+        hn        = hn_f.result()       or []
+        remotive  = remotive_f.result() or []
+        remoteok  = remoteok_f.result() or []
+        arbeitnow = arbeitnow_f.result() or []
 
-    remotive = _fetch_remotive(progress)
-    all_raw += remotive
-    if remotive:
-        progress(f"  Remotive: {len(remotive)} relevant jobs")
+    if hn:        progress(f"  HN Who's Hiring: {len(hn)} relevant posts")
+    if remotive:  progress(f"  Remotive: {len(remotive)} relevant jobs")
+    if remoteok:  progress(f"  RemoteOK: {len(remoteok)} relevant jobs")
+    if arbeitnow: progress(f"  Arbeitnow: {len(arbeitnow)} relevant jobs")
 
-    remoteok = _fetch_remoteok(progress)
-    all_raw += remoteok
-    if remoteok:
-        progress(f"  RemoteOK: {len(remoteok)} relevant jobs")
-
-    arbeitnow = _fetch_arbeitnow(progress)
-    all_raw += arbeitnow
-    if arbeitnow:
-        progress(f"  Arbeitnow: {len(arbeitnow)} relevant jobs")
+    all_raw = hn + remotive + remoteok + arbeitnow
 
     # Filter out excluded locations and already-seen jobs
     filtered = []
