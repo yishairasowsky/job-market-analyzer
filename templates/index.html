@@ -530,42 +530,42 @@
 <header>
   <div class="container">
     <h1>Job Market <span>Analyzer</span></h1>
-    <p class="tagline">Enter your background. Watch 5 AI agents find jobs, detect funded companies, and write your outreach — live.</p>
+    <p class="tagline">Upload your resume. 5 AI agents find you relevant jobs, spot companies that just raised funding, and write ready-to-send emails — automatically.</p>
     <div class="pipeline">
 
       <div class="pipeline-step" id="agent-1">
         <div class="step-num">1</div>
-        <div class="step-name">Job Collector</div>
-        <div class="step-does">Scans HN Who's Hiring, Remotive, RemoteOK & Arbeitnow for relevant remote roles</div>
-        <div class="step-out">↓ Job listings</div>
+        <div class="step-name">Job Finder</div>
+        <div class="step-does">Scans multiple job boards for remote roles that match your background</div>
+        <div class="step-out">↓ Relevant jobs</div>
       </div>
 
       <div class="pipeline-step" id="agent-2">
         <div class="step-num">2</div>
-        <div class="step-name">Funding Detector</div>
-        <div class="step-does">Searches the web to find which companies recently raised money — they're actively hiring</div>
-        <div class="step-out">↓ Funded companies</div>
+        <div class="step-name">Funding Checker</div>
+        <div class="step-does">Finds which companies recently raised money — those are the ones actively growing and hiring</div>
+        <div class="step-out">↓ Hot companies</div>
       </div>
 
       <div class="pipeline-step" id="agent-3">
         <div class="step-num">3</div>
-        <div class="step-name">Skills Analyzer</div>
-        <div class="step-does">Reads all postings and extracts what the market wants vs. what you already have</div>
-        <div class="step-out">↓ Skills gap report</div>
+        <div class="step-name">Skills Match</div>
+        <div class="step-does">Compares what employers are asking for against what you bring to the table</div>
+        <div class="step-out">↓ Your gaps & strengths</div>
       </div>
 
       <div class="pipeline-step" id="agent-4">
         <div class="step-num">4</div>
-        <div class="step-name">Report Writer</div>
-        <div class="step-does">Synthesizes everything into a personalized weekly report with priority companies and actions</div>
-        <div class="step-out">↓ Your report</div>
+        <div class="step-name">Report</div>
+        <div class="step-does">Puts it all together into a clear weekly summary with exactly where to focus your energy</div>
+        <div class="step-out">↓ Your action plan</div>
       </div>
 
       <div class="pipeline-step" id="agent-5">
         <div class="step-num">5</div>
-        <div class="step-name">Outreach Writer</div>
-        <div class="step-does">For each top company, researches what they do and writes a LinkedIn message + cold email</div>
-        <div class="step-out">↓ Ready to send</div>
+        <div class="step-name">Message Writer</div>
+        <div class="step-does">For each top company, writes a LinkedIn message and cold email — personalized, ready to copy and send</div>
+        <div class="step-out">↓ Emails ready to send</div>
       </div>
 
     </div>
@@ -625,8 +625,8 @@
 <section id="resultsSection">
   <div class="container">
     <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('report', this)">Weekly Report</button>
-      <button class="tab-btn" onclick="switchTab('outreach', this)">Outreach Messages</button>
+      <button class="tab-btn active" onclick="switchTab('report', this)">Your Report</button>
+      <button class="tab-btn" onclick="switchTab('outreach', this)">Emails & Messages</button>
     </div>
 
     <div class="tab-panel active" id="tab-report">
@@ -772,7 +772,10 @@
 
   function addLog(msg, agentNum) {
     if (!msg || !msg.trim()) return;
-    document.getElementById('liveSection').style.display = 'block';
+    const liveSection = document.getElementById('liveSection');
+    const wasHidden = liveSection.style.display === 'none' || liveSection.style.display === '';
+    liveSection.style.display = 'block';
+    if (wasHidden) liveSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     const line = document.createElement('div');
     line.className = 'log-line';
     const lower = msg.toLowerCase();
