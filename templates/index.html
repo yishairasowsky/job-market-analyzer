@@ -327,6 +327,9 @@
       overflow-y: auto;
     }
 
+    .output-box a { color: var(--accent); text-decoration: none; }
+    .output-box a:hover { text-decoration: underline; }
+
     .copy-btn {
       display: inline-flex; align-items: center; gap: 0.4rem;
       background: var(--surface); border: 1px solid var(--border);
@@ -771,8 +774,8 @@
     } else if (e.type === 'progress') {
       addLog(e.message, e.agent);
     } else if (e.type === 'result') {
-      document.getElementById('reportBox').textContent = e.report || '';
-      document.getElementById('outreachBox').textContent = e.outreach || 'No outreach messages generated.';
+      document.getElementById('reportBox').innerHTML = linkify(e.report || '');
+      document.getElementById('outreachBox').innerHTML = linkify(e.outreach || 'No outreach messages generated.');
       document.getElementById('resultsSection').style.display = 'block';
       document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
     } else if (e.type === 'done') {
@@ -851,6 +854,12 @@
     section.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     panel.classList.add('active');
     btn.classList.add('active');
+  }
+
+  function linkify(text) {
+    return text
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
   }
 
   function copyText(id) {
